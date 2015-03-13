@@ -41,7 +41,7 @@ link = "http://videogames.pricecharting.com/search?q=#{game}&type=videogames&go=
 page = Mechanize.new.get(link)
 
 # If the link is still the same, we're on the search page. Otherwise, we're on the game's page
-if page.uri.to_s == link)
+if page.uri.to_s == link
   # Display all search results
   # Game array, containing all the data that needs parsed for each game
   # Split by artbitrary number of whitespace (games are separated by more whitespace than game data)
