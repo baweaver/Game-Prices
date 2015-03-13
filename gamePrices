@@ -8,42 +8,28 @@ require 'optparse'
 require 'mechanize'
 
 def header
-    printf("%-4s%-50s%-10s%-10s%-10s\n", "#", "Title", "Loose", "Complete", "New")
-    84.times {print "-"}
-    puts
+  printf "%-4s%-50s%-10s%-10s%-10s\n", "#", "Title", "Loose", "Complete", "New"
+  puts '-' * 84
 end
 
 def printGame(title, loose_price, new_price, complete_price, number = 0)
-  # Display the game info in a moderately pretty format
-  if (title.length > 40)
-    title = "#{title[0, 40]} (...)" 
-  end
-  
-  printf("%-4s%-50s%-10s%-10s%-10s\n", number, title, loose_price, complete_price, new_price)
+  title = "#{title[0, 40]} (...)" if title.length > 40
+  printf "%-4s%-50s%-10s%-10s%-10s\n", number, title, loose_price, complete_price, new_price
 end
 
-# Switches
 options = {}
 
 optparse = OptionParser.new do |opts|   
   opts.banner = "Usage: ./gamePrices [options] video game" 
   
-  opts.on( '-p', '--platform  "PLATFORM"', 'Search on a specific platform (quotes if platform contains spaces)' ) do |p| 
+  opts.on('-p', '--platform  "PLATFORM"', 'Search on a specific platform (quotes if platform contains spaces)' ) do |platform| 
     consoles = ["amiibo", "atari 2600", "atari 400", "atari 5200", "atari 7800", "cd-i", "gameboy", "gameboy advance", "gameboy color", "gamecube", "macintosh", "nes", "nintendo 3ds", "nintendo 64", "nintendo ds", "pc games", "sega genesis", "super nintendo", "virtual boy", "wii", "wii u"]   
-    p.downcase!
-    
-    if (consoles.include? p) 
-      options[:platform] = p
-    else
-      puts "Platform argument is invalid"
-    end
-      
-    ARGV.delete(p)
+    platform.downcase!
+    options[:platform] = platform if consoles.include?(platform) or abort "Platform argument is invalid"
   end
   
   opts.on( '-h', '--help', 'Display this screen' ) do     
-    puts opts     
-    exit   
+    puts opts and exit   
   end
 end
 
@@ -52,13 +38,10 @@ optparse.parse!
 # Game search
 game = ARGV.join("+")
 link = "http://videogames.pricecharting.com/search?q=#{game}&type=videogames&go=Go"
-
-mech = Mechanize.new
-
-page = mech.get(link)
+page = Mechanize.new.get(link)
 
 # If the link is still the same, we're on the search page. Otherwise, we're on the game's page
-if (page.uri.to_s == link) 
+if page.uri.to_s == link)
   # Display all search results
   # Game array, containing all the data that needs parsed for each game
   # Split by artbitrary number of whitespace (games are separated by more whitespace than game data)
@@ -71,11 +54,9 @@ if (page.uri.to_s == link)
     # Gives Title, Console, Genre, Loose Price, New Price
     game_data = game.strip.split(/\s{2,}/)
     
-    # Check for a specific platform search
-    if (options[:platform])
-      if (options[:platform] == game_data[1].downcase)
-        printGame(game_data[0].strip, game_data[3].strip, game_data[4].strip, "none", i)
-      end
+    # Check for a specific platform search - You do realize this is the same thing right?
+    if options.fetch(:platform, '') == game_data[1].downcase
+      printGame(game_data[0].strip, game_data[3].strip, game_data[4].strip, "none", i)
     else 
       printGame(game_data[0].strip, game_data[3].strip, game_data[4].strip, "none", i)
     end
@@ -83,9 +64,9 @@ if (page.uri.to_s == link)
   
 else
   # Specific game page
-  title = page.at('//h1[@id="product_name"]').text.split(/prices/i)[0].strip
-  loose_price = page.at('//td[@id="used_price"]').text.strip
-  new_price = page.at('//td[@id="new_price"]').text.strip
+  title          = page.at('//h1[@id="product_name"]').text.split(/prices/i)[0].strip
+  loose_price    = page.at('//td[@id="used_price"]').text.strip
+  new_price      = page.at('//td[@id="new_price"]').text.strip
   complete_price = page.at('//td[@id="complete_price"]').text.strip
   
   header
@@ -93,21 +74,12 @@ else
 end
 
 # Open page in browser or exit
-while (true)
+while true
   puts "\nEnter open to open the game's page in your browser. Press enter to exit"
-
-  cmd = STDIN.gets.chomp
-
-  case cmd
-
-  when "open"
-    system("open #{page.uri}")
-  when "search"
-    print "Enter search term: "
-    search = STDIN.gets.chomp
-    system("#{$0} #{search}")
-    break
-  else
-    exit
+  
+  case STDIN.gets.chomp
+  when "open"   then system("open #{page.uri}")
+  when "search" then print "Enter search term: " and system("#{$0} #{STDIN.gets.chomp}") and break
+  else exit
   end
 end
